@@ -1,0 +1,500 @@
+openapi: 3.0.3
+info:
+  title: WHT API
+  description: API documentation for WHT authentication system
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:5000/api
+    description: Development server
+
+paths:
+  /auth/signup:
+    post:
+      summary: Register a new user
+      description: Creates a new user account with email and generates a TOTP secret key
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+      responses:
+        '200':
+          description: User successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      email: "user@example.com"
+                      secret_key: "JBSWY3DPEHPK3PXP"
+                      base62_id: "3mxK8sQ9pN2"
+                    error: null
+        '400':
+          description: Invalid request or email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                emailExists:
+                  value:
+                    success: false
+                    data: null
+                    error: "Email already registered"
+      x-code-samples:
+        - lang: JavaScript
+          label: Axios
+          source: |
+            const axios = require('axios');
+            
+            try {
+              const response = await axios.post('http://localhost:5000/api/auth/signup', {
+                email: 'user@example.com'
+              });
+            
+              if (response.data.success) {
+                const { email, secret_key, base62_id } = response.data.data;
+                console.log('User created:', email);
+                console.log('Secret key:', secret_key);
+                console.log('Base62 ID:', base62_id);
+              }
+            } catch (error) {
+              console.error('Signup failed:', error.response?.data?.error);
+            }
+        - lang: Python
+          label: requests
+          source: |
+            import requests
+            
+            try:
+                response = requests.post(
+                    'http://localhost:5000/api/auth/signup',
+                    json={'email': 'user@example.com'}
+                )
+                data = response.json()
+                
+                if data['success']:
+                    email = data['data']['email']
+                    secret_key = data['data']['secret_key']
+                    base62_id = data['data']['base62_id']
+                    print(f'User created: {email}')
+                    print(f'Secret key: {secret_key}')
+                    print(f'Base62 ID: {base62_id}')
+                else:
+                    print(f'Signup failed: {data["error"]}')
+            except requests.exceptions.RequestException as e:
+                print(f'Request failed: {e}')
+
+  /auth/signin:
+    post:
+      summary: Authenticate user
+      description: Authenticates a user using email and two consecutive TOTP codes
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - code1
+                - code2
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                code1:
+                  type: string
+                  minLength: 6
+                  maxLength: 6
+                  example: "123456"
+                code2:
+                  type: string
+                  minLength: 6
+                  maxLength: 6
+                  example: "234567"
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      email: "user@example.com"
+                      token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    error: null
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                invalidCodes:
+                  value:
+                    success: false
+                    data: null
+                    error: "Invalid codes"
+      x-code-samples:
+        - lang: JavaScript
+          label: Axios
+          source: |
+            const axios = require('axios');
+            
+            try {
+              const response = await axios.post('http://localhost:5000/api/auth/signin', {
+                email: 'user@example.com',
+                code1: '123456',
+                code2: '234567'
+              });
+            
+              if (response.data.success) {
+                const { token } = response.data.data;
+                // Store token for future authenticated requests
+                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+                console.log('Login successful');
+              }
+            } catch (error) {
+              console.error('Login failed:', error.response?.data?.error);
+            }
+        - lang: Python
+          label: requests
+          source: |
+            import requests
+            
+            try:
+                response = requests.post(
+                    'http://localhost:5000/api/auth/signin',
+                    json={
+                        'email': 'user@example.com',
+                        'code1': '123456',
+                        'code2': '234567'
+                    }
+                )
+                data = response.json()
+                
+                if data['success']:
+                    token = data['data']['token']
+                    # Store token for future authenticated requests
+                    headers = {'Authorization': f'Bearer {token}'}
+                    print('Login successful')
+                else:
+                    print(f'Login failed: {data["error"]}')
+            except requests.exceptions.RequestException as e:
+                print(f'Request failed: {e}')
+
+  /webhook/{base62_id}/{path}:
+    post:
+      summary: Webhook endpoint
+      description: Universal webhook endpoint for receiving data
+      tags:
+        - Webhooks
+      parameters:
+        - in: path
+          name: base62_id
+          required: true
+          schema:
+            type: string
+          description: User's Base62 ID
+        - in: path
+          name: path
+          required: true
+          schema:
+            type: string
+          description: Path to post webhook data to
+      requestBody:
+        description: Webhook payload
+        content:
+          application/json:
+            schema:
+              type: object
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+          '*/*':
+            schema:
+              type: string
+      responses:
+        '200':
+          description: Webhook received successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                data: {
+                  webhook_id: "507f1f77bcf86cd799439011",
+                  path: "notifications/email",
+                  received_at: "2024-02-20T11:45:00Z"
+                }
+                error: null
+        '404':
+          description: User or path not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: false
+                data: null
+                error: "Path not found"
+
+  /paths:
+    get:
+      summary: List user paths
+      description: Get all paths created by the authenticated user
+      tags:
+        - Paths
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of paths
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                data: [
+                  {
+                    _id: "507f1f77bcf86cd799439011",
+                    path: "notifications/email",
+                    description: "Email notification webhook",
+                    created_at: "2024-02-20T10:30:00Z",
+                    last_used: "2024-02-20T11:45:00Z",
+                    webhook_count: 5
+                  }
+                ]
+                error: null
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Create new path
+      description: Create a new webhook path for the authenticated user
+      tags:
+        - Paths
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - path
+              properties:
+                path:
+                  type: string
+                  example: "notifications/email"
+                description:
+                  type: string
+                  example: "Email notification webhook"
+      responses:
+        '201':
+          description: Path created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                data: {
+                  _id: "507f1f77bcf86cd799439011",
+                  path: "notifications/email",
+                  description: "Email notification webhook",
+                  created_at: "2024-02-20T10:30:00Z",
+                  last_used: null,
+                  webhook_count: 0
+                }
+                error: null
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: false
+                data: null
+                error: "Path already exists for this user"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /paths/{pathId}:
+    delete:
+      summary: Delete path
+      description: Delete a path and its associated webhook data
+      tags:
+        - Paths
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: pathId
+          required: true
+          schema:
+            type: string
+          description: Path ID to delete
+      responses:
+        '200':
+          description: Path deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                data: null
+                error: null
+        '404':
+          description: Path not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: false
+                data: null
+                error: "Path not found or unauthorized"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /paths/{pathId}/data:
+    get:
+      summary: Get path webhook data
+      description: Retrieve webhook data for a specific path
+      tags:
+        - Paths
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: pathId
+          required: true
+          schema:
+            type: string
+          description: Path ID to get data for
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Number of records to return
+        - in: query
+          name: skip
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Number of records to skip
+      responses:
+        '200':
+          description: Webhook data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                data: {
+                  path: "notifications/email",
+                  total_count: 25,
+                  limit: 10,
+                  skip: 0,
+                  data: [
+                    {
+                      _id: "507f1f77bcf86cd799439011",
+                      path_id: "507f1f77bcf86cd799439011",
+                      user_id: "507f1f77bcf86cd799439011",
+                      received_at: "2024-02-20T11:45:00Z",
+                      content_type: "application/json",
+                      payload: { "key": "value" },
+                      headers: {
+                        "content-type": "application/json",
+                        "user-agent": "curl/7.64.1"
+                      }
+                    }
+                  ]
+                }
+                error: null
+        '404':
+          description: Path not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: false
+                data: null
+                error: "Path not found or unauthorized"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          nullable: true
+        error:
+          type: string
+          nullable: true
+
+  responses:
+    Unauthorized:
+      description: Authentication required or failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiResponse'
+          example:
+            success: false
+            data: null
+            error: "No authorization token"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+tags:
+  - name: Authentication
+    description: Authentication endpoints
+  - name: Paths
+    description: Path management endpoints
+  - name: Webhooks
+    description: Webhook endpoints 
