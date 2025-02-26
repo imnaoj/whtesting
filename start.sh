@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Replace API_URL in index.html if provided
+# If API_URL is present, replace the default localhost:5000 with the provided value
 if [ ! -z "$API_URL" ]; then
     sed -i "s|http://localhost:5000|$API_URL|g" /app/whtconsole/dist/spa/js/*.js
 fi

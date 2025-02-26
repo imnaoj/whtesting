@@ -1,28 +1,108 @@
 # README
 
-This project is a helper tool to review incoming webhooks. Just create a path to get its webhook URL and provide it to the third party app. Whenever it posts JSON data, you'll get an update in realtime.
+A real-time webhook testing tool that allows you to create custom webhook endpoints, monitor incoming requests, and analyze webhook data. Built with Vue3+Quasar frontend and Flask+MongoDB backend.
 
-You can run the project locally or via Docker. The only requirement is to have a MongoDB server available - if you haven't one, you may run it as Docker instance or even signing in a MongoDB free account M0 Sandbox (see below)
+## Features
+- Real-time webhook monitoring with WebSocket updates
+- Custom webhook endpoint creation
+- Detailed request inspection
+- Data export functionality
+- TOTP authentication
+- Internationalization (English and Spanish)
+- Responsive design
+- Interactive charts for webhook activity
 
-## Set up a free MongoDB Atlas account
+## Environment Variables
 
-Cluster tier M0 (AWS, Azure or GCP) available forever free at https://www.mongodb.com/pricing 
+The following environment variables are required:
 
-## Run the project locally
+- `MONGO_URI`: MongoDB connection string
+- `JWT_SECRET_KEY`: Secret key for JWT token generation
+- `API_URL`: Base URL for the API (default: http://localhost:5000)
+- `CORS_ORIGINS`: Comma-separated list of allowed origins
 
-### The Flask API
-
+Example:
 ```bash
-MONGO_URI="mongodb+srv://******:******@testing.random.mongodb.net/whtesting?retryWrites=true&w=majority&appName=Testing" python wsgi.py
+MONGO_URI="mongodb+srv://user:pass@cluster.mongodb.net/dbname"
+JWT_SECRET_KEY="your-secure-secret-key"
+API_URL="http://localhost:5000"
+CORS_ORIGINS="http://localhost,http://localhost:9000"
+```
+## Development Setup
+
+### Prerequisites
+- Python 3.8+
+- Node.js 18+ (22.x recommended)
+- MongoDB instance 4.4+ instance
+- (Optional) Docker for containerized deployment
+
+### Backend Setup
+1. Create a Python virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-### The Vue3+Quasar frontend
+2. Install Python dependencies:
+```bash
+cd whtapi
+pip install -r requirements.txt
+```
 
+3. Run the Flask API:
+```bash
+python wsgi.py
+```
+
+### Frontend Setup
+1. Install Node.js dependencies:
+```bash
+cd whtconsole
+yarn # or npm install
+```
+
+2. Run the development server:
 ```bash
 quasar dev
 ```
 
-## Run the project as a Docker
+## Architecture
+
+### Backend (Flask)
+- RESTful API endpoints for path management
+- WebSocket integration for real-time updates
+- MongoDB for data persistence
+- Authentication using TOTP
+- Gevent for async operations
+
+### Frontend (Vue3 + Quasar)
+- Real-time data updates using Socket.IO
+- Responsive Quasar components
+- Pinia for state management
+- Vue Router for navigation
+- Internationalization with vue-i18n
+- ApexCharts for data visualization
+
+## API Documentation
+
+The API documentation is available in OpenAPI format at `whtapi/static/openapi.yaml`. Key endpoints:
+
+- `POST /api/webhook/{base62_id}/{path}`: Webhook endpoint for receiving data
+- `GET /api/paths/`: List all paths
+- `POST /api/paths/`: Create new path
+- `GET /api/paths/{pathid}/data/`: Get webhook data for a path
+- `GET /api/paths/{pathid}/chart/`: Get aggregated chart data
+
+## Security Considerations
+
+- All API endpoints (except webhooks and login) require JWT authentication
+- CORS protection
+- Rate limiting on webhook endpoints
+- Secure WebSocket connections
+- Environment-based configuration
+- Authentication using TOTP for ease of use
+
+## Running Docker
 
 ### Build the image
 
@@ -32,18 +112,29 @@ docker build -t whtesting .
 
 ### Run the image
 
-```bash
-docker run --detach --name whtinstance --env MONGO_URI="mongodb+srv://******:******@testing.random.mongodb.net/whtesting?retryWrites=true&w=majority&appName=Testing" --env API_URL="http://localhost" --env CORS_ORIGINS="http://localhost" -p 80:80 whtesting:latest
-```
-
-## Testing the webhook
+Replace the variables with your own environment values
 
 ```bash
-curl -X POST http://localhost/api/webhook/fkONWGJveJj20LlH/ejemplo1
-  -H "Content-Type: application/json"
-  -d '{
-        "event": "process_completed",
-        "solicitud_id": 2346787867,
-        "firmantes_id":[34534534534,534543534534]
-    }'
+docker run --detach --name whtinstance \
+  --env MONGO_URI="mongodb+srv://user:pass@cluster.mongodb.net/dbname" \
+  --env JWT_SECRET_KEY="change-this-key" \
+  --env API_URL="http://localhost" \
+  --env CORS_ORIGINS="http://localhost" \
+  -p 80:80 whtesting:latest
 ```
+
+## MongoDB
+
+Cluster tier M0 (AWS, Azure or GCP) available forever free¹ at [MongoDB pricing](https://www.mongodb.com/pricing) ─ once signed in, it only takes a few minutes to have it running. The cluster info page provides the connection string (just use the Connect button).
+
+¹ as of February 2025
+
+## About the code
+
+The entire project was developed using Cursor IDE (claude-3.5-sonnet). The Dockerfile and related files were also generated by the AI (human fix to install a current version of Node).
+
+Total number of lines patched were less than 50.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

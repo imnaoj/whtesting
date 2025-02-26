@@ -130,9 +130,9 @@ def get_path_chart_data(current_user, path_id):
     if not path:
         return api_response(False, None, "Path not found or unauthorized"), 404
 
-    # Get data for last 8 hours (480 minutes)
+    # Get data for last hour (60 minutes)
     end_date = datetime.now(timezone.utc)
-    start_date = end_date - timedelta(minutes=480)
+    start_date = end_date - timedelta(minutes=60)
     
     # Aggregate webhook counts by minute
     pipeline = [

@@ -81,11 +81,11 @@ export default {
       tooltip: {
         x: {
           formatter: function(val) {
-            const date = new Date(val)
-            return date.toLocaleTimeString([], {
+            return new Date(val).toLocaleString(localStorage.getItem('language') || 'en-US', {
               hour: '2-digit',
               minute: '2-digit',
-              hour12: false
+              hour12: false,
+              timeZone: "UTC"
             })
           }
         },
@@ -101,7 +101,7 @@ export default {
       xaxis: {
         type: 'datetime',
         labels: {
-          datetimeUTC: true,
+          datetimeUTC: false,
           format: 'HH:mm'
         }
       },
@@ -123,15 +123,15 @@ export default {
 
     const updateChart = () => {
       const now = new Date()
-      const cutoffTime = now.getTime() - (480 * 60 * 1000) // 480 minutes ago
+      const cutoffTime = now.getTime() - (60 * 60 * 1000) // 60 minutes ago
 
       if (chart.value && chart.value.chart) {
         const data = chartData.value.get(props.pathId)
         if (data) {
-          // Filter out data older than 480 minutes
+          // Filter out data older than 60 minutes
           const filteredData = {
             timestamps: data.timestamps.filter(t => t >= cutoffTime),
-            counts: data.counts.slice(-(480)) // Keep last 480 points
+            counts: data.counts.slice(-(60)) // Keep last 60 points
           }
 
           // Update the chart

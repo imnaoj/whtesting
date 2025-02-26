@@ -3,10 +3,13 @@
     <q-header elevated>
       <q-toolbar>
         <q-toolbar-title>
-          WHT Admin
+          {{ t('common.appTitle') }}
         </q-toolbar-title>
 
         <q-space />
+
+        <!-- Language selector -->
+        <language-selector class="q-mr-sm" />
 
         <!-- Show logout button only if authenticated -->
         <q-btn
@@ -17,7 +20,7 @@
           icon="logout"
           @click="logout"
         >
-          <q-tooltip>Logout</q-tooltip>
+          <q-tooltip>{{ t('common.logout') }}</q-tooltip>
         </q-btn>
       </q-toolbar>
     </q-header>
@@ -34,12 +37,15 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from 'src/stores/auth'
 import { useQuasar } from 'quasar'
 import SocketStatus from 'components/SocketStatus.vue'
+import LanguageSelector from 'components/LanguageSelector.vue'
 import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'AdminLayout',
+  
   components: {
-    SocketStatus
+    SocketStatus,
+    LanguageSelector
   },
 
   setup() {
@@ -49,12 +55,20 @@ export default {
     const { t } = useI18n()
 
     const logout = async () => {
-      authStore.logout()
-      router.push({ name: 'login' })
-      $q.notify({
-        type: 'positive',
-        message: t('auth.notifications.logoutSuccess')
-      })
+      try {
+        await authStore.logout()
+        router.push('/admin/login')
+        $q.notify({
+          type: 'positive',
+          message: t('auth.notifications.logoutSuccess')
+        })
+      } catch (error) {
+        console.error('Error during logout:', error)
+        $q.notify({
+          type: 'negative',
+          message: t('auth.notifications.logoutError')
+        })
+      }
     }
 
     return {

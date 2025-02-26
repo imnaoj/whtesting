@@ -9,8 +9,7 @@
             <p class="text-caption q-my-none">{{ path?.description }}</p>
             <div class="row items-center q-mt-sm">
               <p class="text-caption text-grey-8 q-my-none">
-                {{ $t('pathDetails.webhookUrl') }}: <b>{{ webhookUrl }}</b>
-              </p>
+                <span class="gt-sm">{{ $t('pathDetails.webhookUrl') }}: </span><b>{{ webhookUrl }}</b>
               <q-btn
                 flat
                 dense
@@ -24,6 +23,7 @@
                   {{ $t('pathDetails.copyUrl') }}
                 </q-tooltip>
               </q-btn>
+            </p>
             </div>
           </div>
         </div>
@@ -31,18 +31,26 @@
       <div class="col-auto">
         <q-btn
           color="primary"
-          icon-right="download"
-          :label="$t('pathDetails.export')"
-          @click="exportData"
+          icon="download"
           :loading="exporting"
-        />
+          @click="exportData"
+        >
+          <span class="gt-sm">{{ $t('pathDetails.export') }}</span>
+          <q-tooltip>
+            {{ $t('pathDetails.export') }}
+          </q-tooltip>
+        </q-btn>
         <q-btn
           color="primary"
-          icon-right="arrow_back"
-          :label="$t('common.back')"
+          icon="arrow_back"
           to="/admin"
           class="q-ml-md"
-        />
+        >
+          <span class="gt-sm">{{ $t('common.back') }}</span>
+          <q-tooltip>
+            {{ $t('common.back') }}
+          </q-tooltip>
+        </q-btn>
       </div>
     </div>
 

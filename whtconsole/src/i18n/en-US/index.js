@@ -80,6 +80,8 @@ export default {
     }
   },
   common: {
+    appTitle: 'WHT Admin',
+    logout: 'Logout',
     cancel: 'Cancel',
     save: 'Save',
     close: 'Close',
@@ -88,5 +90,10 @@ export default {
     actions: 'Actions'
   },
   failed: 'Action failed',
-  success: 'Action was successful'
+  success: 'Action was successful',
+  splash: {
+    title: 'Webhook Testing Console',
+    subtitle: 'Test webhook data endpoints with ease',
+    startButton: 'GET STARTED'
+  }
 }

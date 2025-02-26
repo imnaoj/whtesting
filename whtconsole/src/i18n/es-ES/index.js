@@ -85,8 +85,15 @@ export default {
     close: 'Cerrar',
     back: 'Volver',
     loading: 'Cargando...',
-    actions: 'Acciones'
+    actions: 'Acciones',
+    appTitle: 'WHT Admin',
+    logout: 'Cerrar sesión'
   },
   failed: 'Acción fallida',
-  success: 'Acción exitosa'
+  success: 'Acción exitosa',
+  splash: {
+    title: 'Consola de Pruebas Webhook',
+    subtitle: 'Prueba tus endpoints de datos webhook fácilmente',
+    startButton: 'COMENZAR'
+  }
 } 

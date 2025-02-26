@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { api } from 'src/boot/axios'
 import { useSocketStore } from 'src/stores/socket'
 import { nextTick } from 'vue'  // Import nextTick from Vue
+import { usePathStore } from 'src/stores/path'
 
 export const useAuthStore = defineStore('auth', {
   // Initial state
@@ -63,18 +64,36 @@ export const useAuthStore = defineStore('auth', {
     /**
      * Logout user and clear state
      */
-    logout() {
-      const socketStore = useSocketStore()
-      socketStore.disconnect()
-      
-      // Clear auth state
-      this.token = null
-      this.email = null
-      this.isAuthenticated = false
-      
-      // Remove data from localStorage
-      localStorage.removeItem('token')
-      localStorage.removeItem('email')
+    async logout() {
+      try {
+        // Get stores
+        const socketStore = useSocketStore()
+        const pathStore = usePathStore()
+
+        // First cleanup webhook listeners
+        pathStore.cleanupWebhookListener()
+
+        // Then disconnect socket
+        await nextTick()
+        socketStore.disconnect()
+
+        // Finally clear auth state
+        this.token = null
+        this.email = null
+        this.isAuthenticated = false
+        
+        // Remove data from localStorage
+        localStorage.removeItem('token')
+        localStorage.removeItem('email')
+      } catch (error) {
+        console.error('Error during logout:', error)
+        // Still clear state even if there's an error
+        this.token = null
+        this.email = null
+        this.isAuthenticated = false
+        localStorage.removeItem('token')
+        localStorage.removeItem('email')
+      }
     },
 
     /**
